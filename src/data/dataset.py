@@ -2,6 +2,7 @@ import pandas as pd
 from glob import glob
 from PIL import Image
 from torch.utils.data import Dataset
+from src.preprocess.transforms import build_transforms
 
 
 class GTSRBDataset(Dataset):
@@ -33,8 +34,10 @@ class GTSRBDataset(Dataset):
 
 if __name__ == "__main__":
 
+    transform = build_transforms()
     dataset = GTSRBDataset(
         manifest_path="data/processed/train_manifest.csv",
+        transform=transform,
     )
 
     print("len dataset", len(dataset))
@@ -42,5 +45,5 @@ if __name__ == "__main__":
     image, label = dataset[0]
 
     print("image type", type(image))
-    print("Image size:", image.size)
+    print("Image shape:", image.shape)
     print("Label:", label)
