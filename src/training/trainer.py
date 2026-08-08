@@ -3,20 +3,21 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 from torch.optim import Optimizer
 
+
 def train_one_batch(
-        model: nn.Module,
-        images: torch.Tensor,
-        labels: torch.Tensor,
-        criterion: nn.Module,
-        optimizer: Optimizer,
-)-> float:
+    model: nn.Module,
+    images: torch.Tensor,
+    labels: torch.Tensor,
+    criterion: nn.Module,
+    optimizer: Optimizer,
+) -> float:
 
     model.train()
 
     optimizer.zero_grad()
 
     outputs = model(images)
-    loss = criterion(outputs,labels)
+    loss = criterion(outputs, labels)
 
     loss.backward()
     optimizer.step()
@@ -30,7 +31,7 @@ def train_one_epoch(
     criterion: nn.Module,
     optimizer: Optimizer,
     device: torch.device,
-)-> float:
+) -> float:
 
     total_loss = 0.0
     total_samples = 0
@@ -44,7 +45,7 @@ def train_one_epoch(
             images=images,
             labels=labels,
             criterion=criterion,
-            optimizer=optimizer
+            optimizer=optimizer,
         )
 
         batch_size = images.size(0)
@@ -59,22 +60,17 @@ if __name__ == "__main__":
 
     device = torch.device("cpu")
 
-    images = torch.randn(100,3,32,32)
+    images = torch.randn(100, 3, 32, 32)
 
-    labels = torch.randint(0,43, (100,))
+    labels = torch.randint(0, 43, (100,))
 
     dataset = TensorDataset(images, labels)
 
-    dataloader = DataLoader(
-        dataset,
-        batch_size=16,
-        shuffle=True
-    )
+    dataloader = DataLoader(dataset, batch_size=16, shuffle=True)
 
     model = nn.Sequential(
         nn.Flatten(),
-        nn.Linear(3*32*32,43),
-        
+        nn.Linear(3 * 32 * 32, 43),
     ).to(device)
 
     criterion = nn.CrossEntropyLoss()
