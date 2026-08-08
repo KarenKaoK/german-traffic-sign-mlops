@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader, TensorDataset
 
-from src.training.trainer import train_one_batch
+from src.training.trainer import train_one_batch, train_one_epoch
 
 
 def test_train_one_batch_returns_loss():
@@ -82,3 +83,39 @@ def test_train_one_batch_update_model_weight():
         not torch.equal(before, after)
         for before, after in zip(before_weights, after_weights)
     )
+
+
+def test_train_one_epoch_return_loss():
+
+    # arrange
+    device = torch.device("cpu")
+    images = torch.randn(100, 3, 32, 32)
+    labels = torch.randint(0, 43, (100,))
+
+    dataset = TensorDataset(images, labels)
+    dataloader = DataLoader(dataset, batch_size=16, shuffle=False)
+
+    model = nn.Sequential(
+        nn.Flatten(),
+        nn.Linear(3 * 32 * 32, 43),
+    ).to(device)
+
+    criterion = nn.CrossEntropyLoss()
+
+    optimizer = torch.optim.Adam(
+        model.parameters(),
+        lr=0.0001,
+    )
+
+    # act
+    epoch_loss = train_one_epoch(
+        model=model,
+        dataloader=dataloader,
+        criterion=criterion,
+        optimizer=optimizer,
+        device=device,
+    )
+
+    # assert
+    assert isinstance(epoch_loss, float)
+    assert epoch_loss >= 0
