@@ -56,6 +56,34 @@ def train_one_epoch(
     return total_loss / total_samples
 
 
+def evaluate_one_epoch(
+    model: nn.Module,
+    dataloader: DataLoader,
+    criterion: nn.Module,
+    device: torch.device,
+) -> float:
+
+    model.eval()
+
+    total_loss = 0.0
+    total_samples = 0
+
+    with torch.no_grad():
+
+        for images, labels in dataloader:
+            images = images.to(device)
+            labels = labels.to(device)
+
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+
+            batch_size = images.size(0)
+
+            total_loss += loss.item() * batch_size
+            total_samples += batch_size
+    return total_loss / total_samples
+
+
 if __name__ == "__main__":
 
     device = torch.device("cpu")
