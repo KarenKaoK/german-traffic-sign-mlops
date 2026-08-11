@@ -2,7 +2,12 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from src.training.trainer import train_one_batch, train_one_epoch, evaluate_one_epoch
+from src.training.trainer import (
+    train_one_batch,
+    train_one_epoch,
+    evaluate_one_epoch,
+    train_model,
+)
 
 
 def test_train_one_batch_returns_loss():
@@ -187,3 +192,56 @@ def test_evaluate_one_epoch_does_not_update_model_weights():
         torch.equal(before, after)
         for before, after in zip(before_weights, after_weights)
     )
+
+
+def test_train_model_return_losses_for_each_epoch():
+
+    # arrange
+
+    device = torch.device("cpu")
+
+    model = nn.Sequential(
+        nn.Flatten(),
+        nn.Linear(3 * 32 * 32, 43),
+    ).to(device)
+
+    train_images = torch.randn(100, 3, 32, 32)
+    train_labels = torch.randint(0, 43, (100,))
+
+    train_dataset = TensorDataset(train_images, train_labels)
+    train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=False)
+
+    val_images = torch.randn(40, 3, 32, 32)
+    val_labels = torch.randint(0, 43, (40,))
+
+    val_dataset = TensorDataset(val_images, val_labels)
+    val_dataloader = DataLoader(
+        val_dataset,
+        batch_size=16,
+        shuffle=False,
+    )
+
+    criterion = nn.CrossEntropyLoss()
+
+    optimizer = torch.optim.Adam(
+        model.parameters(),
+        lr=0.0001,
+    )
+
+    # act
+    train_losses, val_losses = train_model(
+        model=model,
+        train_dataloader=train_dataloader,
+        val_dataloader=val_dataloader,
+        criterion=criterion,
+        device=device,
+        optimizer=optimizer,
+        num_epoch=3,
+    )
+
+    # assert
+    assert len(train_losses) == 3
+    assert len(val_losses) == 3
+
+    assert all(isinstance(loss, float) for loss in train_losses)
+    assert all(isinstance(loss, float) for loss in val_losses)

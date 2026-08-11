@@ -84,6 +84,42 @@ def evaluate_one_epoch(
     return total_loss / total_samples
 
 
+def train_model(
+    model: nn.Module,
+    train_dataloader: DataLoader,
+    val_dataloader: DataLoader,
+    criterion: nn.Module,
+    device: torch.device,
+    optimizer: Optimizer,
+    num_epoch: int,
+) -> tuple[list[float], list[float]]:
+
+    train_losses = []
+    val_losses = []
+
+    for epoch in range(num_epoch):
+
+        train_epoch_loss = train_one_epoch(
+            model=model,
+            dataloader=train_dataloader,
+            criterion=criterion,
+            optimizer=optimizer,
+            device=device,
+        )
+
+        val_epoch_loss = evaluate_one_epoch(
+            model=model,
+            dataloader=val_dataloader,
+            criterion=criterion,
+            device=device,
+        )
+
+        train_losses.append(train_epoch_loss)
+        val_losses.append(val_epoch_loss)
+
+    return train_losses, val_losses
+
+
 if __name__ == "__main__":
 
     device = torch.device("cpu")
@@ -117,3 +153,52 @@ if __name__ == "__main__":
     )
 
     print(f" epoch loss: {epoch_loss}")
+
+    print("---")
+
+    # fake train data
+    train_images = torch.randn(100, 3, 32, 32)
+    train_labels = torch.randint(0, 43, (100,))
+
+    train_dataset = TensorDataset(train_images, train_labels)
+    train_dataloader = DataLoader(
+        train_dataset,
+        batch_size=16,
+        shuffle=True,
+    )
+
+    # fake validation data
+    val_images = torch.randn(40, 3, 32, 32)
+    val_labels = torch.randint(0, 43, (40,))
+
+    val_dataset = TensorDataset(val_images, val_labels)
+    val_dataloader = DataLoader(
+        val_dataset,
+        batch_size=16,
+        shuffle=False,
+    )
+
+    model = nn.Sequential(
+        nn.Flatten(),
+        nn.Linear(3 * 32 * 32, 43),
+    ).to(device)
+
+    criterion = nn.CrossEntropyLoss()
+
+    optimizer = torch.optim.Adam(
+        model.parameters(),
+        lr=0.0001,
+    )
+
+    train_losses, val_losses = train_model(
+        model=model,
+        train_dataloader=train_dataloader,
+        val_dataloader=val_dataloader,
+        criterion=criterion,
+        device=device,
+        optimizer=optimizer,
+        num_epoch=5,
+    )
+
+    print("train losses:", train_losses)
+    print("val losses:", val_losses)
