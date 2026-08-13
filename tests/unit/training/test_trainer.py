@@ -126,7 +126,7 @@ def test_train_one_epoch_return_loss():
     assert epoch_loss >= 0
 
 
-def test_evaluate_one_epoch_returns_loss():
+def test_evaluate_one_epoch_returns_loss_and_accuracy():
 
     # arrange
     device = torch.device("cpu")
@@ -144,7 +144,7 @@ def test_evaluate_one_epoch_returns_loss():
     criterion = nn.CrossEntropyLoss()
 
     # act
-    val_loss = evaluate_one_epoch(
+    val_loss, val_acc = evaluate_one_epoch(
         model=model,
         dataloader=dataloader,
         criterion=criterion,
@@ -153,7 +153,9 @@ def test_evaluate_one_epoch_returns_loss():
 
     # assert
     assert isinstance(val_loss, float)
+    assert isinstance(val_acc, float)
     assert val_loss >= 0
+    assert 1 >= val_acc >= 0
 
 
 def test_evaluate_one_epoch_does_not_update_model_weights():
@@ -229,7 +231,7 @@ def test_train_model_return_losses_for_each_epoch():
     )
 
     # act
-    train_losses, val_losses = train_model(
+    train_losses, val_losses, val_accuracies = train_model(
         model=model,
         train_dataloader=train_dataloader,
         val_dataloader=val_dataloader,
@@ -242,6 +244,9 @@ def test_train_model_return_losses_for_each_epoch():
     # assert
     assert len(train_losses) == 3
     assert len(val_losses) == 3
+    assert len(val_accuracies) == 3
 
     assert all(isinstance(loss, float) for loss in train_losses)
     assert all(isinstance(loss, float) for loss in val_losses)
+    assert all(isinstance(acc, float) for acc in val_accuracies)
+    assert all(0 <= acc <= 1 for acc in val_accuracies)

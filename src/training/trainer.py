@@ -61,12 +61,13 @@ def evaluate_one_epoch(
     dataloader: DataLoader,
     criterion: nn.Module,
     device: torch.device,
-) -> float:
+) -> tuple[float, float]:
 
     model.eval()
 
     total_loss = 0.0
     total_samples = 0
+    total_correct = 0
 
     with torch.no_grad():
 
@@ -77,11 +78,15 @@ def evaluate_one_epoch(
             outputs = model(images)
             loss = criterion(outputs, labels)
 
+            predictions = torch.argmax(outputs, dim=1)
+            correct = (predictions == labels).sum().item()
+            total_correct += correct
+
             batch_size = images.size(0)
 
             total_loss += loss.item() * batch_size
             total_samples += batch_size
-    return total_loss / total_samples
+    return (total_loss / total_samples, total_correct / total_samples)
 
 
 def train_model(
@@ -92,10 +97,11 @@ def train_model(
     device: torch.device,
     optimizer: Optimizer,
     num_epoch: int,
-) -> tuple[list[float], list[float]]:
+) -> tuple[list[float], list[float], list[float]]:
 
     train_losses = []
     val_losses = []
+    val_accuracies = []
 
     for epoch in range(num_epoch):
 
@@ -107,7 +113,7 @@ def train_model(
             device=device,
         )
 
-        val_epoch_loss = evaluate_one_epoch(
+        val_epoch_loss, val_epoch_acc = evaluate_one_epoch(
             model=model,
             dataloader=val_dataloader,
             criterion=criterion,
@@ -116,8 +122,9 @@ def train_model(
 
         train_losses.append(train_epoch_loss)
         val_losses.append(val_epoch_loss)
+        val_accuracies.append(val_epoch_acc)
 
-    return train_losses, val_losses
+    return train_losses, val_losses, val_accuracies
 
 
 if __name__ == "__main__":
@@ -190,7 +197,7 @@ if __name__ == "__main__":
         lr=0.0001,
     )
 
-    train_losses, val_losses = train_model(
+    train_losses, val_losses, val_accuracies = train_model(
         model=model,
         train_dataloader=train_dataloader,
         val_dataloader=val_dataloader,
@@ -202,3 +209,4 @@ if __name__ == "__main__":
 
     print("train losses:", train_losses)
     print("val losses:", val_losses)
+    print("val accuracies:", val_accuracies)
