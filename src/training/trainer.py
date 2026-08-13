@@ -97,11 +97,14 @@ def train_model(
     device: torch.device,
     optimizer: Optimizer,
     num_epoch: int,
+    checkpoint_path: str,
 ) -> tuple[list[float], list[float], list[float]]:
 
     train_losses = []
     val_losses = []
     val_accuracies = []
+
+    best_val_loss = float("inf")
 
     for epoch in range(num_epoch):
 
@@ -119,6 +122,10 @@ def train_model(
             criterion=criterion,
             device=device,
         )
+
+        if val_epoch_loss < best_val_loss:
+            best_val_loss = val_epoch_loss
+            torch.save(model.state_dict(), checkpoint_path)
 
         train_losses.append(train_epoch_loss)
         val_losses.append(val_epoch_loss)
@@ -163,6 +170,8 @@ if __name__ == "__main__":
 
     print("---")
 
+    checkpoint_path = "artifacts/best_model.pt"
+
     # fake train data
     train_images = torch.randn(100, 3, 32, 32)
     train_labels = torch.randint(0, 43, (100,))
@@ -205,6 +214,7 @@ if __name__ == "__main__":
         device=device,
         optimizer=optimizer,
         num_epoch=5,
+        checkpoint_path=checkpoint_path,
     )
 
     print("train losses:", train_losses)
